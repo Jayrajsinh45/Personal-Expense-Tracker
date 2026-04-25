@@ -25,31 +25,29 @@ jobs:
       - name: Setup Java
         uses: actions/setup-java@v4
         with:
-          distribution: 'zulu'
+          distribution: 'temurin'
           java-version: '17'
-
-      - name: Setup Android SDK
-        uses: android-actions/setup-android@v3
 
       - name: Install dependencies
         run: npm install
 
-      - name: Setup Expo
-        uses: expo/expo-github-action@v8
-        with:
-          expo-version: latest
-          expo-cache: true
+      - name: Install Capacitor
+        run: |
+          npm install @capacitor/cli@5 @capacitor/core@5 @capacitor/android@5
 
-      - name: Prebuild Android
-        run: npx expo prebuild --platform android --clean
+      - name: Build Expo Web App
+        run: npx expo export --platform web
 
-      - name: Fix Gradle Version for Expo 51
-        working-directory: android
-        run: sed -i 's/gradle-8.8-all.zip/gradle-8.6-all.zip/g' gradle/wrapper/gradle-wrapper.properties || true
+      - name: Initialise and sync Capacitor
+        run: |
+          npx cap init PersonalExpenseTracker com.jayrajsinh45.personalexpensetracker --web-dir dist
+          npx cap add android
+          npx cap sync android
 
-      - name: Build APK (Debug)
-        working-directory: android
-        run: ./gradlew assembleDebug --no-daemon --stacktrace
+      - name: Build Android Debug APK
+        run: |
+          cd android
+          ./gradlew assembleDebug --no-daemon --stacktrace
 
       - name: Upload APK Artifact
         uses: actions/upload-artifact@v4

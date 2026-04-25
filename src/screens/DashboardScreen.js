@@ -68,7 +68,7 @@ export default function DashboardScreen({ navigation }) {
           style={[styles.actionButton, styles.reportButton]} 
           onPress={() => navigation.navigate('Reports')}
         >
-          <Text style={styles.actionButtonText}>Monthly Reports (PDF)</Text>
+          <Text style={styles.actionButtonText}>View Reports</Text>
         </TouchableOpacity>
 
         <TouchableOpacity 

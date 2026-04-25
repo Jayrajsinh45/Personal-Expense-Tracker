@@ -1,16 +1,18 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, Alert, Platform } from 'react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
-import { addTransaction } from '../database/db';
+import { addTransaction, updateTransaction } from '../database/db';
 import { TRANSACTION_TYPES, CATEGORIES } from '../utils/constants';
 import { format } from 'date-fns';
 
-export default function AddTransactionScreen({ navigation }) {
-  const [type, setType] = useState('Expense');
-  const [category, setCategory] = useState('Others');
-  const [amount, setAmount] = useState('');
-  const [note, setNote] = useState('');
-  const [date, setDate] = useState(new Date());
+export default function AddTransactionScreen({ route, navigation }) {
+  const editItem = route.params?.editItem;
+
+  const [type, setType] = useState(editItem ? editItem.type : 'Expense');
+  const [category, setCategory] = useState(editItem ? editItem.category : 'Others');
+  const [amount, setAmount] = useState(editItem ? String(editItem.amount) : '');
+  const [note, setNote] = useState(editItem ? (editItem.note || '') : '');
+  const [date, setDate] = useState(editItem ? new Date(editItem.date) : new Date());
   const [showDatePicker, setShowDatePicker] = useState(false);
 
   const handleSave = () => {
@@ -24,18 +26,30 @@ export default function AddTransactionScreen({ navigation }) {
     }
 
     try {
-      addTransaction(
-        type,
-        category,
-        parseFloat(amount),
-        date.toISOString(),
-        note
-      );
+      if (editItem) {
+        updateTransaction(
+          editItem.id,
+          type,
+          category,
+          parseFloat(amount),
+          date.toISOString(),
+          note
+        );
+      } else {
+        addTransaction(
+          type,
+          category,
+          parseFloat(amount),
+          date.toISOString(),
+          note
+        );
+      }
+
       if (Platform.OS === 'web') {
-        window.alert('Record added successfully');
+        window.alert(editItem ? 'Record updated successfully' : 'Record added successfully');
         navigation.goBack();
       } else {
-        Alert.alert('Success', 'Record added successfully', [
+        Alert.alert('Success', editItem ? 'Record updated successfully' : 'Record added successfully', [
           { text: 'OK', onPress: () => navigation.goBack() }
         ]);
       }

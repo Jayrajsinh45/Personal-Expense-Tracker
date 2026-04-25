@@ -1,14 +1,17 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, FlatList, StyleSheet, TouchableOpacity, Alert } from 'react-native';
+import { View, Text, FlatList, StyleSheet, TouchableOpacity, Alert, Platform } from 'react-native';
 import { getAllTransactions, deleteTransaction } from '../database/db';
 import { format } from 'date-fns';
 
-export default function HistoryScreen() {
+export default function HistoryScreen({ navigation }) {
   const [transactions, setTransactions] = useState([]);
 
   useEffect(() => {
-    loadTransactions();
-  }, []);
+    const unsubscribe = navigation.addListener('focus', () => {
+      loadTransactions();
+    });
+    return unsubscribe;
+  }, [navigation]);
 
   const loadTransactions = () => {
     const data = getAllTransactions();
@@ -16,21 +19,32 @@ export default function HistoryScreen() {
   };
 
   const handleDelete = (id) => {
-    Alert.alert(
-      'Delete Record',
-      'Are you sure you want to delete this transaction?',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        { 
-          text: 'Delete', 
-          style: 'destructive',
-          onPress: () => {
-            deleteTransaction(id);
-            loadTransactions();
+    if (Platform.OS === 'web') {
+      if (window.confirm('Are you sure you want to delete this transaction?')) {
+        deleteTransaction(id);
+        loadTransactions();
+      }
+    } else {
+      Alert.alert(
+        'Delete Record',
+        'Are you sure you want to delete this transaction?',
+        [
+          { text: 'Cancel', style: 'cancel' },
+          { 
+            text: 'Delete', 
+            style: 'destructive',
+            onPress: () => {
+              deleteTransaction(id);
+              loadTransactions();
+            }
           }
-        }
-      ]
-    );
+        ]
+      );
+    }
+  };
+
+  const handleEdit = (item) => {
+    navigation.navigate('AddTransaction', { editItem: item });
   };
 
   const getTypeColor = (type) => {
@@ -58,12 +72,20 @@ export default function HistoryScreen() {
           <Text style={[styles.itemType, { color: getTypeColor(item.type) }]}>{item.type}</Text>
         </View>
       </View>
-      <TouchableOpacity 
-        style={styles.deleteBtn} 
-        onPress={() => handleDelete(item.id)}
-      >
-        <Text style={styles.deleteText}>Delete</Text>
-      </TouchableOpacity>
+      <View style={styles.actionButtons}>
+        <TouchableOpacity 
+          style={styles.editBtn} 
+          onPress={() => handleEdit(item)}
+        >
+          <Text style={styles.editText}>Edit</Text>
+        </TouchableOpacity>
+        <TouchableOpacity 
+          style={styles.deleteBtn} 
+          onPress={() => handleDelete(item.id)}
+        >
+          <Text style={styles.deleteText}>Delete</Text>
+        </TouchableOpacity>
+      </View>
     </View>
   );
 
@@ -101,7 +123,10 @@ const styles = StyleSheet.create({
   itemRight: { alignItems: 'flex-end' },
   itemAmount: { fontSize: 16, fontWeight: 'bold' },
   itemType: { fontSize: 11, fontWeight: 'bold', textTransform: 'uppercase' },
-  deleteBtn: { alignSelf: 'flex-end', paddingVertical: 5, paddingHorizontal: 10 },
+  actionButtons: { flexDirection: 'row', justifyContent: 'flex-end', gap: 15, marginTop: 5 },
+  editBtn: { paddingVertical: 5, paddingHorizontal: 10 },
+  editText: { color: '#3B82F6', fontSize: 12, fontWeight: '600' },
+  deleteBtn: { paddingVertical: 5, paddingHorizontal: 10 },
   deleteText: { color: '#EF4444', fontSize: 12, fontWeight: '600' },
   empty: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   emptyText: { color: '#9CA3AF', fontSize: 16 }

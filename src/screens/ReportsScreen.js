@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Alert, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Alert, ActivityIndicator, Platform } from 'react-native';
 import * as Print from 'expo-print';
 import * as Sharing from 'expo-sharing';
 import { getTransactionsByMonth } from '../database/db';
@@ -18,7 +18,11 @@ export default function ReportsScreen() {
 
     if (data.length === 0) {
       setLoading(false);
-      Alert.alert('No Data', `No transactions found for ${monthName}`);
+      if (Platform.OS === 'web') {
+        window.alert(`No transactions found for ${monthName}`);
+      } else {
+        Alert.alert('No Data', `No transactions found for ${monthName}`);
+      }
       return;
     }
 
@@ -87,12 +91,21 @@ export default function ReportsScreen() {
     `;
 
     try {
-      const { uri } = await Print.printToFileAsync({ html: htmlContent });
-      setLoading(false);
-      await Sharing.shareAsync(uri, { UTI: '.pdf', mimeType: 'application/pdf' });
+      if (Platform.OS === 'web') {
+        await Print.printAsync({ html: htmlContent });
+        setLoading(false);
+      } else {
+        const { uri } = await Print.printToFileAsync({ html: htmlContent });
+        setLoading(false);
+        await Sharing.shareAsync(uri, { UTI: '.pdf', mimeType: 'application/pdf' });
+      }
     } catch (error) {
       setLoading(false);
-      Alert.alert('Error', 'Failed to generate PDF');
+      if (Platform.OS === 'web') {
+        window.alert('Failed to generate PDF');
+      } else {
+        Alert.alert('Error', 'Failed to generate PDF');
+      }
     }
   };
 

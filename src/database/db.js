@@ -50,6 +50,23 @@ export const addTransaction = (type, category, amount, date, note) => {
   );
 };
 
+export const updateTransaction = (id, type, category, amount, date, note) => {
+  if (Platform.OS === 'web') {
+    const data = JSON.parse(localStorage.getItem('transactions') || '[]');
+    const index = data.findIndex(t => t.id === id);
+    if (index !== -1) {
+      data[index] = { id, type, category, amount, date, note };
+      localStorage.setItem('transactions', JSON.stringify(data));
+    }
+    return;
+  }
+
+  return db.runSync(
+    'UPDATE transactions SET type = ?, category = ?, amount = ?, date = ?, note = ? WHERE id = ?',
+    [type, category, amount, date, note, id]
+  );
+};
+
 export const getAllTransactions = () => {
   if (Platform.OS === 'web') {
     const data = JSON.parse(localStorage.getItem('transactions') || '[]');

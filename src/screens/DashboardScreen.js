@@ -70,6 +70,17 @@ export default function DashboardScreen({ navigation }) {
         >
           <Text style={styles.actionButtonText}>Monthly Reports (PDF)</Text>
         </TouchableOpacity>
+
+        <TouchableOpacity 
+          style={[styles.actionButton, styles.logoutButton]} 
+          onPress={async () => {
+            const AsyncStorage = require('@react-native-async-storage/async-storage').default;
+            await AsyncStorage.removeItem('isLoggedIn');
+            navigation.replace('Login');
+          }}
+        >
+          <Text style={styles.actionButtonText}>Logout</Text>
+        </TouchableOpacity>
       </View>
     </ScrollView>
   );
@@ -118,5 +129,6 @@ const styles = StyleSheet.create({
   actionButtonText: { color: '#fff', fontSize: 16, fontWeight: 'bold' },
   outlineButton: { backgroundColor: 'transparent', borderWidth: 2, borderColor: '#4F46E5' },
   outlineButtonText: { color: '#4F46E5' },
-  reportButton: { backgroundColor: '#111827' }
+  reportButton: { backgroundColor: '#111827' },
+  logoutButton: { backgroundColor: '#EF4444' }
 });

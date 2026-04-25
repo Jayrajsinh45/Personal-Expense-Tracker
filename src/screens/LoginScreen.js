@@ -1,18 +1,50 @@
-import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, Image } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, Image, ActivityIndicator } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { AUTH_CONFIG } from '../utils/constants';
 
 export default function LoginScreen({ navigation }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [isCheckingAuth, setIsCheckingAuth] = useState(true);
 
-  const handleLogin = () => {
+  useEffect(() => {
+    checkLoginState();
+  }, []);
+
+  const checkLoginState = async () => {
+    try {
+      const isLoggedIn = await AsyncStorage.getItem('isLoggedIn');
+      if (isLoggedIn === 'true') {
+        navigation.replace('Dashboard');
+      } else {
+        setIsCheckingAuth(false);
+      }
+    } catch (e) {
+      setIsCheckingAuth(false);
+    }
+  };
+
+  const handleLogin = async () => {
     if (email.toLowerCase() === AUTH_CONFIG.EMAIL && password === AUTH_CONFIG.PASSWORD) {
-      navigation.replace('Dashboard');
+      try {
+        await AsyncStorage.setItem('isLoggedIn', 'true');
+        navigation.replace('Dashboard');
+      } catch (e) {
+        Alert.alert('Error', 'Failed to save login session.');
+      }
     } else {
       Alert.alert('Access Denied', 'Invalid email or password. Please try again.');
     }
   };
+
+  if (isCheckingAuth) {
+    return (
+      <View style={[styles.container, { alignItems: 'center' }]}>
+        <ActivityIndicator size="large" color="#fff" />
+      </View>
+    );
+  }
 
   return (
     <View style={styles.container}>

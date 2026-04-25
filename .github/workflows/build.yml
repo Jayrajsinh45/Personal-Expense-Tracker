@@ -47,6 +47,7 @@ jobs:
       - name: Build Android Debug APK
         run: |
           cd android
+          sed -i 's/gradle-8.0.2-all.zip/gradle-8.7-all.zip/g' gradle/wrapper/gradle-wrapper.properties || true
           ./gradlew assembleDebug --no-daemon --stacktrace
 
       - name: Upload APK Artifact

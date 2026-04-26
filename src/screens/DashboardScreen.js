@@ -39,15 +39,13 @@ export default function DashboardScreen({ navigation }) {
   };
 
   return (
-    <View style={styles.container}>
+    <ScrollView 
+      style={{ flex: 1, backgroundColor: '#F8F9FE' }}
+      contentContainerStyle={{ paddingHorizontal: 20, paddingTop: 20, paddingBottom: 40 }}
+      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#4338CA" />}
+      showsVerticalScrollIndicator={true}
+    >
       <StatusBar barStyle="dark-content" backgroundColor="#F8F9FE" />
-      
-      <ScrollView 
-        style={styles.scrollView}
-        contentContainerStyle={styles.scrollContent}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#4338CA" />}
-        showsVerticalScrollIndicator={false}
-      >
         {/* Header matching Dribbble */}
         <View style={styles.header}>
           <View>
@@ -82,10 +80,11 @@ export default function DashboardScreen({ navigation }) {
         {/* Quick Summary Grid */}
         <View style={styles.grid}>
           {[
-            { title: 'Income', amount: summary.Salary, icon: '⬇️', color: '#10B981', bg: '#D1FAE5' },
-            { title: 'Investment', amount: summary.SIP, icon: '↗️', color: '#8B5CF6', bg: '#EDE9FE' },
+            { title: 'Income', typeParam: 'Salary', amount: summary.Salary, icon: '⬇️', color: '#10B981', bg: '#D1FAE5' },
+            { title: 'Expense', typeParam: 'Expense', amount: summary.Expense, icon: '⬆️', color: '#EF4444', bg: '#FEE2E2' },
+            { title: 'Investment', typeParam: 'SIP', amount: summary.SIP, icon: '↗️', color: '#8B5CF6', bg: '#EDE9FE' },
           ].map((item, idx) => (
-            <View key={idx} style={styles.miniCard}>
+            <TouchableOpacity key={idx} style={styles.miniCard} onPress={() => navigation.navigate('Reports', { filterType: item.typeParam })}>
               <View style={[styles.miniIconBox, { backgroundColor: item.bg }]}>
                 <Text style={{ fontSize: 14 }}>{item.icon}</Text>
               </View>
@@ -93,7 +92,7 @@ export default function DashboardScreen({ navigation }) {
                 <Text style={styles.miniLabel}>{item.title}</Text>
                 <Text style={[styles.miniAmount, { color: item.color }]}>₹{item.amount.toLocaleString()}</Text>
               </View>
-            </View>
+            </TouchableOpacity>
           ))}
         </View>
 
@@ -125,43 +124,11 @@ export default function DashboardScreen({ navigation }) {
             </View>
           ))
         )}
-        <View style={{ height: 120 }} />
-      </ScrollView>
-
-      {/* Custom Bottom Navigation Bar */}
-      <View style={styles.bottomNav}>
-        <TouchableOpacity style={styles.navItem}>
-          <Text style={[styles.navIcon, styles.activeNavIcon]}>🏠</Text>
-          <Text style={[styles.navLabel, styles.activeNavLabel]}>Home</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.navItem} onPress={() => navigation.navigate('History')}>
-          <Text style={styles.navIcon}>📜</Text>
-          <Text style={styles.navLabel}>History</Text>
-        </TouchableOpacity>
-        
-        <View style={styles.fabContainer}>
-          <TouchableOpacity style={styles.fab} onPress={() => navigation.navigate('AddTransaction')}>
-            <Text style={styles.fabIcon}>+</Text>
-          </TouchableOpacity>
-        </View>
-
-        <TouchableOpacity style={styles.navItem} onPress={() => navigation.navigate('Reports')}>
-          <Text style={styles.navIcon}>📊</Text>
-          <Text style={styles.navLabel}>Reports</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.navItem} onPress={() => navigation.navigate('Profile')}>
-          <Text style={styles.navIcon}>👤</Text>
-          <Text style={styles.navLabel}>Profile</Text>
-        </TouchableOpacity>
-      </View>
-    </View>
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#F8F9FE' }, // Light lavender background
-  scrollView: { flex: 1, ...Platform.select({ web: { overflowY: 'auto' } }) },
-  scrollContent: { paddingHorizontal: 20, paddingTop: 60, flexGrow: 1 },
   
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 30 },
   greeting: { fontSize: 20, fontWeight: 'bold', color: '#1E293B' },
@@ -185,12 +152,12 @@ const styles = StyleSheet.create({
 
   grid: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 30 },
   miniCard: {
-    backgroundColor: '#fff', width: '48%', borderRadius: 20, padding: 15, flexDirection: 'row', alignItems: 'center',
+    backgroundColor: '#fff', width: '31%', borderRadius: 16, padding: 10, paddingVertical: 15, alignItems: 'center',
     elevation: 3, shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.03, shadowRadius: 10,
   },
-  miniIconBox: { width: 36, height: 36, borderRadius: 12, alignItems: 'center', justifyContent: 'center', marginRight: 10 },
-  miniLabel: { fontSize: 11, color: '#64748B', fontWeight: '600' },
-  miniAmount: { fontSize: 14, fontWeight: 'bold', marginTop: 2 },
+  miniIconBox: { width: 36, height: 36, borderRadius: 12, alignItems: 'center', justifyContent: 'center', marginBottom: 8 },
+  miniLabel: { fontSize: 11, color: '#64748B', fontWeight: '600', textAlign: 'center' },
+  miniAmount: { fontSize: 13, fontWeight: 'bold', marginTop: 2, textAlign: 'center' },
 
   recentHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 15 },
   sectionTitle: { fontSize: 18, fontWeight: 'bold', color: '#1E293B' },
@@ -208,24 +175,4 @@ const styles = StyleSheet.create({
 
   empty: { alignItems: 'center', padding: 20 },
   emptyText: { color: '#94A3B8' },
-
-  bottomNav: {
-    position: 'absolute', bottom: 0, left: 0, right: 0,
-    backgroundColor: '#fff', flexDirection: 'row', justifyContent: 'space-around', alignItems: 'center',
-    height: 80, paddingBottom: Platform.OS === 'ios' ? 20 : 0,
-    borderTopLeftRadius: 30, borderTopRightRadius: 30,
-    elevation: 20, shadowColor: '#000', shadowOffset: { width: 0, height: -10 }, shadowOpacity: 0.05, shadowRadius: 20,
-  },
-  navItem: { alignItems: 'center', justifyContent: 'center', width: 60 },
-  navIcon: { fontSize: 22, color: '#94A3B8', marginBottom: 4 },
-  navLabel: { fontSize: 10, color: '#94A3B8', fontWeight: '600' },
-  activeNavIcon: { color: '#4338CA' },
-  activeNavLabel: { color: '#4338CA', fontWeight: 'bold' },
-  fabContainer: { position: 'relative', top: -25, alignItems: 'center', justifyContent: 'center' },
-  fab: {
-    width: 60, height: 60, borderRadius: 30, backgroundColor: '#4338CA',
-    alignItems: 'center', justifyContent: 'center',
-    elevation: 10, shadowColor: '#4338CA', shadowOffset: { width: 0, height: 10 }, shadowOpacity: 0.4, shadowRadius: 15,
-  },
-  fabIcon: { fontSize: 32, color: '#fff', fontWeight: '300', marginTop: -2 },
 });

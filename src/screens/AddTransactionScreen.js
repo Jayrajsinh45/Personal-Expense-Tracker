@@ -7,6 +7,8 @@ import DateTimePicker from '@react-native-community/datetimepicker';
 import { addTransaction, updateTransaction } from '../database/db';
 import { CATEGORIES, TRANSACTION_TYPES } from '../utils/constants';
 import { format } from 'date-fns';
+import ScreenHeader from '../components/ScreenHeader';
+import { pushReminderToTomorrow } from '../utils/notifications';
 
 export default function AddTransactionScreen({ route, navigation }) {
   const editItem = route.params?.editItem;
@@ -29,19 +31,27 @@ export default function AddTransactionScreen({ route, navigation }) {
     const numAmount = parseFloat(amount);
     if (editItem) updateTransaction(editItem.id, type, category, numAmount, date.toISOString(), note);
     else addTransaction(type, category, numAmount, date.toISOString(), note);
+    
+    // User added a transaction today, so push reminder to tomorrow
+    pushReminderToTomorrow();
+    
     navigation.goBack();
   };
 
   return (
-    <View style={styles.container}>
-      <StatusBar barStyle="dark-content" backgroundColor="#F8F9FE" />
-      <View style={styles.topSection}>
-        <Text style={styles.title}>{editItem ? 'Edit' : 'Add'} Entry</Text>
-        <Text style={styles.subtitle}>Enter the transaction details below</Text>
-      </View>
+    <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1, backgroundColor: '#F8F9FE' }}>
+      <ScrollView 
+        style={{ flex: 1 }} 
+        contentContainerStyle={{ paddingBottom: 40 }} 
+        showsVerticalScrollIndicator={true}
+      >
+        <StatusBar barStyle="dark-content" backgroundColor="#F8F9FE" />
+        <ScreenHeader title={editItem ? 'Edit Entry' : 'Add Entry'} navigation={navigation} />
+        <View style={styles.topSection}>
+          <Text style={styles.subtitle}>Enter the transaction details below</Text>
+        </View>
 
-      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
-        <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+        <View style={styles.scrollContent}>
           <View style={styles.formCard}>
             <Text style={styles.label}>Transaction Type</Text>
             <View style={styles.typeSelector}>
@@ -69,11 +79,35 @@ export default function AddTransactionScreen({ route, navigation }) {
             </ScrollView>
 
             <Text style={styles.label}>Date</Text>
-            <TouchableOpacity style={styles.datePicker} onPress={() => setShowDatePicker(true)}>
-              <Text style={styles.dateText}>{format(date, 'EEEE, dd MMMM yyyy')}</Text>
-              <Text style={{ fontSize: 18 }}>📅</Text>
-            </TouchableOpacity>
-            {showDatePicker && <DateTimePicker value={date} mode="date" display="default" onChange={(e, d) => { setShowDatePicker(Platform.OS === 'ios'); if (d) setDate(d); }} />}
+            {Platform.OS === 'web' ? (
+              <input 
+                type="date" 
+                value={format(date, 'yyyy-MM-dd')} 
+                onChange={(e) => setDate(new Date(e.target.value))} 
+                style={{ 
+                  padding: '18px 20px', 
+                  borderRadius: '16px', 
+                  border: '1px solid #E2E8F0', 
+                  backgroundColor: '#F8F9FE',
+                  fontSize: '15px', 
+                  color: '#1E293B',
+                  fontFamily: 'inherit',
+                  outline: 'none',
+                  marginTop: '5px',
+                  marginBottom: '20px',
+                  width: '100%',
+                  boxSizing: 'border-box'
+                }} 
+              />
+            ) : (
+              <>
+                <TouchableOpacity style={styles.datePicker} onPress={() => setShowDatePicker(true)}>
+                  <Text style={styles.dateText}>{format(date, 'EEEE, dd MMMM yyyy')}</Text>
+                  <Text style={{ fontSize: 18 }}>📅</Text>
+                </TouchableOpacity>
+                {showDatePicker && <DateTimePicker value={date} mode="date" display="default" onChange={(e, d) => { setShowDatePicker(Platform.OS === 'ios'); if (d) setDate(d); }} />}
+              </>
+            )}
 
             <Text style={styles.label}>Notes (Optional)</Text>
             <TextInput style={styles.noteInput} placeholder="What was this for?" value={note} onChangeText={setNote} multiline numberOfLines={3} placeholderTextColor="#CBD5E1" />
@@ -83,19 +117,16 @@ export default function AddTransactionScreen({ route, navigation }) {
             <Text style={styles.saveBtnText}>{editItem ? 'Update Entry' : 'Save Transaction'}</Text>
           </TouchableOpacity>
           <View style={{ height: 60 }} />
-        </ScrollView>
-      </KeyboardAvoidingView>
-    </View>
+        </View>
+      </ScrollView>
+    </KeyboardAvoidingView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#F8F9FE' }, // Match Dribbble Light Lavender
-  topSection: { padding: 25, paddingTop: 40, backgroundColor: '#F8F9FE' },
-  title: { fontSize: 28, fontWeight: 'bold', color: '#1E293B' },
+  topSection: { paddingHorizontal: 25, paddingBottom: 5, backgroundColor: '#F8F9FE' },
   subtitle: { fontSize: 13, color: '#64748B', marginTop: 4, fontWeight: '500' },
-  scrollView: { flex: 1, ...Platform.select({ web: { overflowY: 'auto' } }) },
-  scrollContent: { padding: 20, paddingTop: 0, flexGrow: 1 },
+  scrollContent: { padding: 20, paddingTop: 0 },
   formCard: {
     backgroundColor: '#fff', borderRadius: 25, padding: 25, elevation: 5,
     shadowColor: '#4338CA', shadowOffset: { width: 0, height: 10 }, shadowOpacity: 0.05, shadowRadius: 20, marginBottom: 25,

@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Platform, StatusBar } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import ScreenHeader from '../components/ScreenHeader';
 
 export default function ProfileScreen({ navigation }) {
   const handleLogout = async () => {
@@ -21,8 +22,13 @@ export default function ProfileScreen({ navigation }) {
   );
 
   return (
-    <View style={styles.container}>
+    <ScrollView 
+      style={{ flex: 1, backgroundColor: '#F8F9FE' }} 
+      contentContainerStyle={{ paddingBottom: 40 }}
+      showsVerticalScrollIndicator={true}
+    >
       <StatusBar barStyle="dark-content" backgroundColor="#F8F9FE" />
+      <ScreenHeader title="Profile" navigation={navigation} />
       
       {/* Lavender Gradient Header Area */}
       <View style={styles.headerBackground}>
@@ -35,11 +41,7 @@ export default function ProfileScreen({ navigation }) {
         </View>
       </View>
 
-      <ScrollView 
-        style={styles.scrollView} 
-        contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}
-      >
+      <View style={styles.scrollContent}>
         <View style={styles.settingsGroup}>
           <Text style={styles.sectionTitle}>Account</Text>
           <View style={styles.card}>
@@ -65,40 +67,13 @@ export default function ProfileScreen({ navigation }) {
             <SettingItem icon="🚪" title="Log Out" isDanger={true} onPress={handleLogout} />
           </View>
         </View>
-      </ScrollView>
-
-      {/* Custom Bottom Navigation Bar */}
-      <View style={styles.bottomNav}>
-        <TouchableOpacity style={styles.navItem} onPress={() => navigation.navigate('Dashboard')}>
-          <Text style={styles.navIcon}>🏠</Text>
-          <Text style={styles.navLabel}>Home</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.navItem} onPress={() => navigation.navigate('History')}>
-          <Text style={styles.navIcon}>📜</Text>
-          <Text style={styles.navLabel}>History</Text>
-        </TouchableOpacity>
-        
-        <View style={styles.fabContainer}>
-          <TouchableOpacity style={styles.fab} onPress={() => navigation.navigate('AddTransaction')}>
-            <Text style={styles.fabIcon}>+</Text>
-          </TouchableOpacity>
-        </View>
-
-        <TouchableOpacity style={styles.navItem} onPress={() => navigation.navigate('Reports')}>
-          <Text style={styles.navIcon}>📊</Text>
-          <Text style={styles.navLabel}>Reports</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.navItem}>
-          <Text style={[styles.navIcon, styles.activeNavIcon]}>👤</Text>
-          <Text style={[styles.navLabel, styles.activeNavLabel]}>Profile</Text>
-        </TouchableOpacity>
       </View>
-    </View>
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#F8F9FE' },
+  container: { flex: 1, backgroundColor: '#F8F9FE', overflow: 'hidden' },
   headerBackground: {
     backgroundColor: '#DCD6FF', // Soft lavender
     height: 250,
@@ -106,10 +81,6 @@ const styles = StyleSheet.create({
     borderBottomRightRadius: 40,
     alignItems: 'center',
     justifyContent: 'center',
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
   },
   headerContent: { alignItems: 'center', marginTop: 40 },
   avatarContainer: {
@@ -122,8 +93,7 @@ const styles = StyleSheet.create({
   userName: { fontSize: 22, fontWeight: 'bold', color: '#1E293B', marginTop: 15 },
   userEmail: { fontSize: 13, color: '#64748B', marginTop: 4 },
   
-  scrollView: { flex: 1, marginTop: 260, ...Platform.select({ web: { overflowY: 'auto' } }) },
-  scrollContent: { paddingHorizontal: 20, paddingTop: 10, flexGrow: 1 },
+  scrollContent: { paddingHorizontal: 20, paddingTop: 10 },
   
   settingsGroup: { marginBottom: 25 },
   sectionTitle: { fontSize: 14, fontWeight: 'bold', color: '#94A3B8', marginBottom: 10, textTransform: 'uppercase', letterSpacing: 1 },
@@ -138,24 +108,4 @@ const styles = StyleSheet.create({
   settingTitle: { fontSize: 16, fontWeight: '600', color: '#1E293B' },
   chevron: { fontSize: 20, color: '#CBD5E1' },
   divider: { height: 1, backgroundColor: '#F1F5F9', marginLeft: 70 },
-
-  bottomNav: {
-    position: 'absolute', bottom: 0, left: 0, right: 0,
-    backgroundColor: '#fff', flexDirection: 'row', justifyContent: 'space-around', alignItems: 'center',
-    height: 80, paddingBottom: Platform.OS === 'ios' ? 20 : 0,
-    borderTopLeftRadius: 30, borderTopRightRadius: 30,
-    elevation: 20, shadowColor: '#000', shadowOffset: { width: 0, height: -10 }, shadowOpacity: 0.05, shadowRadius: 20,
-  },
-  navItem: { alignItems: 'center', justifyContent: 'center', width: 60 },
-  navIcon: { fontSize: 22, color: '#94A3B8', marginBottom: 4 },
-  navLabel: { fontSize: 10, color: '#94A3B8', fontWeight: '600' },
-  activeNavIcon: { color: '#4338CA' },
-  activeNavLabel: { color: '#4338CA', fontWeight: 'bold' },
-  fabContainer: { position: 'relative', top: -25, alignItems: 'center', justifyContent: 'center' },
-  fab: {
-    width: 60, height: 60, borderRadius: 30, backgroundColor: '#4338CA',
-    alignItems: 'center', justifyContent: 'center',
-    elevation: 10, shadowColor: '#4338CA', shadowOffset: { width: 0, height: 10 }, shadowOpacity: 0.4, shadowRadius: 15,
-  },
-  fabIcon: { fontSize: 32, color: '#fff', fontWeight: '300', marginTop: -2 },
 });

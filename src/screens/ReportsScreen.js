@@ -6,6 +6,7 @@ import {
 import { getAllTransactions } from '../database/db';
 import { format } from 'date-fns';
 import { CATEGORIES, TRANSACTION_TYPES } from '../utils/constants';
+import ScreenHeader from '../components/ScreenHeader';
 
 const MONTHS = ['All', 'January', 'February', 'March', 'April', 'May', 'June',
   'July', 'August', 'September', 'October', 'November', 'December'];
@@ -94,14 +95,31 @@ export default function ReportsScreen({ route, navigation }) {
   const netBalance = (summary.Salary || 0) - ((summary.Expense || 0) + (summary.Saving || 0) + (summary.SIP || 0));
 
   return (
-    <View style={styles.container}>
+    <ScrollView 
+      style={{ flex: 1, backgroundColor: '#F8F9FE' }}
+      contentContainerStyle={{ paddingBottom: 40 }}
+      showsVerticalScrollIndicator={true}
+    >
       <StatusBar barStyle="dark-content" backgroundColor="#F8F9FE" />
-      <ScrollView 
-        style={styles.scrollView} 
-        contentContainerStyle={styles.body} 
-        showsVerticalScrollIndicator={false}
-      >
-        <Text style={styles.pageTitle}>Reports</Text>
+      <ScreenHeader title="Reports" navigation={navigation} />
+      
+      <View style={styles.body}>
+
+        {/* Analysis Button */}
+        <TouchableOpacity 
+          style={styles.analysisBtn} 
+          onPress={() => navigation.navigate('Analysis')}
+          activeOpacity={0.85}
+        >
+          <View style={styles.analysisBtnLeft}>
+            <Text style={{ fontSize: 22 }}>📊</Text>
+            <View style={{ marginLeft: 12 }}>
+              <Text style={styles.analysisBtnTitle}>Monthly Analysis</Text>
+              <Text style={styles.analysisBtnSub}>View graphs & day-wise breakdown</Text>
+            </View>
+          </View>
+          <Text style={styles.analysisBtnArrow}>→</Text>
+        </TouchableOpacity>
 
         <View style={styles.filterCard}>
           <View style={styles.filterRow}>
@@ -163,36 +181,8 @@ export default function ReportsScreen({ route, navigation }) {
             </Text>
           </View>
         ))}
-        <View style={{ height: 120 }} />
-      </ScrollView>
-
-      {/* Custom Bottom Navigation Bar */}
-      <View style={styles.bottomNav}>
-        <TouchableOpacity style={styles.navItem} onPress={() => navigation.navigate('Dashboard')}>
-          <Text style={styles.navIcon}>🏠</Text>
-          <Text style={styles.navLabel}>Home</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.navItem} onPress={() => navigation.navigate('History')}>
-          <Text style={styles.navIcon}>📜</Text>
-          <Text style={styles.navLabel}>History</Text>
-        </TouchableOpacity>
-        
-        <View style={styles.fabContainer}>
-          <TouchableOpacity style={styles.fab} onPress={() => navigation.navigate('AddTransaction')}>
-            <Text style={styles.fabIcon}>+</Text>
-          </TouchableOpacity>
-        </View>
-
-        <TouchableOpacity style={styles.navItem}>
-          <Text style={[styles.navIcon, styles.activeNavIcon]}>📊</Text>
-          <Text style={[styles.navLabel, styles.activeNavLabel]}>Reports</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.navItem} onPress={() => navigation.navigate('Profile')}>
-          <Text style={styles.navIcon}>👤</Text>
-          <Text style={styles.navLabel}>Profile</Text>
-        </TouchableOpacity>
       </View>
-    </View>
+    </ScrollView>
   );
 }
 
@@ -219,12 +209,10 @@ const dd = StyleSheet.create({
 });
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#F8F9FE' },
   pageTitle: { fontSize: 28, fontWeight: 'bold', color: '#1E293B', marginBottom: 20 },
   filterCard: { backgroundColor: '#fff', borderRadius: 24, padding: 20, marginBottom: 20, elevation: 4, shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.05, shadowRadius: 10 },
   filterRow: { flexDirection: 'row' },
-  scrollView: { flex: 1, ...Platform.select({ web: { overflowY: 'auto' } }) },
-  body: { padding: 20, paddingTop: 60, flexGrow: 1 },
+  body: { padding: 20, paddingTop: 10 },
   sectionTitle: { fontSize: 18, fontWeight: 'bold', color: '#1E293B', marginBottom: 15, marginTop: 10 },
   summaryGrid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', marginBottom: 10 },
   summaryCard: {
@@ -258,23 +246,14 @@ const styles = StyleSheet.create({
   emptyIcon: { fontSize: 50, marginBottom: 15 },
   emptyText: { fontSize: 18, fontWeight: 'bold', color: '#475569' },
 
-  bottomNav: {
-    position: 'absolute', bottom: 0, left: 0, right: 0,
-    backgroundColor: '#fff', flexDirection: 'row', justifyContent: 'space-around', alignItems: 'center',
-    height: 80, paddingBottom: Platform.OS === 'ios' ? 20 : 0,
-    borderTopLeftRadius: 30, borderTopRightRadius: 30,
-    elevation: 20, shadowColor: '#000', shadowOffset: { width: 0, height: -10 }, shadowOpacity: 0.05, shadowRadius: 20,
+  analysisBtn: {
+    backgroundColor: '#4338CA', borderRadius: 20, padding: 18, marginBottom: 20,
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+    elevation: 8, shadowColor: '#4338CA', shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.3, shadowRadius: 15,
   },
-  navItem: { alignItems: 'center', justifyContent: 'center', width: 60 },
-  navIcon: { fontSize: 22, color: '#94A3B8', marginBottom: 4 },
-  navLabel: { fontSize: 10, color: '#94A3B8', fontWeight: '600' },
-  activeNavIcon: { color: '#4338CA' },
-  activeNavLabel: { color: '#4338CA', fontWeight: 'bold' },
-  fabContainer: { position: 'relative', top: -25, alignItems: 'center', justifyContent: 'center' },
-  fab: {
-    width: 60, height: 60, borderRadius: 30, backgroundColor: '#4338CA',
-    alignItems: 'center', justifyContent: 'center',
-    elevation: 10, shadowColor: '#4338CA', shadowOffset: { width: 0, height: 10 }, shadowOpacity: 0.4, shadowRadius: 15,
-  },
-  fabIcon: { fontSize: 32, color: '#fff', fontWeight: '300', marginTop: -2 },
+  analysisBtnLeft: { flexDirection: 'row', alignItems: 'center' },
+  analysisBtnTitle: { fontSize: 16, fontWeight: 'bold', color: '#fff' },
+  analysisBtnSub: { fontSize: 11, color: '#E0E7FF', marginTop: 2 },
+  analysisBtnArrow: { fontSize: 20, color: '#fff', fontWeight: 'bold' },
 });
+

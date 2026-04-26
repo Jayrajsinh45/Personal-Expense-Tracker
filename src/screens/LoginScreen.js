@@ -17,7 +17,7 @@ export default function LoginScreen({ navigation }) {
   const checkLoginState = async () => {
     try {
       const isLoggedIn = await AsyncStorage.getItem('isLoggedIn');
-      if (isLoggedIn === 'true') navigation.replace('Dashboard');
+      if (isLoggedIn === 'true') navigation.replace('MainTabs');
       else setIsCheckingAuth(false);
     } catch (e) { setIsCheckingAuth(false); }
   };
@@ -27,7 +27,7 @@ export default function LoginScreen({ navigation }) {
     setIsLoggingIn(true);
     setTimeout(async () => {
       if (email.toLowerCase() === AUTH_CONFIG.EMAIL && password === AUTH_CONFIG.PASSWORD) {
-        try { await AsyncStorage.setItem('isLoggedIn', 'true'); navigation.replace('Dashboard'); } 
+        try { await AsyncStorage.setItem('isLoggedIn', 'true'); navigation.replace('MainTabs'); } 
         catch (e) { Alert.alert('Error', 'Failed to save login session.'); setIsLoggingIn(false); }
       } else { Alert.alert('Access Denied', 'Invalid email or password.'); setIsLoggingIn(false); }
     }, 800);
@@ -81,26 +81,21 @@ export default function LoginScreen({ navigation }) {
   );
 
   return (
-    <View style={styles.container}>
+    <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1, backgroundColor: '#F8F9FE' }}>
       <StatusBar barStyle="light-content" backgroundColor="#4338CA" />
       <ScrollView 
-        style={styles.scrollView} 
         contentContainerStyle={styles.scrollContent} 
         showsVerticalScrollIndicator={false}
       >
-        {Platform.OS === 'ios' ? (
-          <KeyboardAvoidingView behavior="padding" style={{ flex: 1 }}>{Content}</KeyboardAvoidingView>
-        ) : Content}
+        {Content}
         <View style={{ height: 40 }} />
       </ScrollView>
-    </View>
+    </KeyboardAvoidingView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#F8F9FE' }, // Dribbble Lavender
-  scrollView: { flex: 1 },
-  scrollContent: { flexGrow: 1 },
+  scrollContent: { paddingBottom: 40 },
   loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#F8F9FE' },
   headerCurve: { position: 'absolute', top: 0, left: 0, right: 0, height: 300, backgroundColor: '#4338CA', borderBottomLeftRadius: 100, borderBottomRightRadius: 100, transform: [{ scaleX: 1.2 }] },
   logoSection: { alignItems: 'center', marginTop: 60, marginBottom: 40 },

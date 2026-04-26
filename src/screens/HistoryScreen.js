@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, FlatList, StyleSheet, TouchableOpacity, Alert, Platform, StatusBar } from 'react-native';
 import { getAllTransactions, deleteTransaction } from '../database/db';
 import { format } from 'date-fns';
+import ScreenHeader from '../components/ScreenHeader';
 
 export default function HistoryScreen({ navigation }) {
   const [transactions, setTransactions] = useState([]);
@@ -61,67 +62,37 @@ export default function HistoryScreen({ navigation }) {
   );
 
   return (
-    <View style={styles.container}>
-      <StatusBar barStyle="dark-content" backgroundColor="#F8F9FE" />
-      
-      <View style={styles.header}>
-        <Text style={styles.title}>History</Text>
-        <Text style={styles.subtitle}>{transactions.length} total records found</Text>
-      </View>
-      
-      {transactions.length === 0 ? (
+    <FlatList
+      style={{ flex: 1, backgroundColor: '#F8F9FE' }}
+      contentContainerStyle={styles.listContent}
+      data={transactions}
+      keyExtractor={(item) => item.id.toString()}
+      renderItem={renderItem}
+      showsVerticalScrollIndicator={true}
+      ListHeaderComponent={
+        <>
+          <StatusBar barStyle="dark-content" backgroundColor="#F8F9FE" />
+          <ScreenHeader title="History" navigation={navigation} />
+          <View style={styles.header}>
+            <Text style={styles.subtitle}>{transactions.length} total records found</Text>
+          </View>
+        </>
+      }
+      ListEmptyComponent={
         <View style={styles.empty}>
           <Text style={styles.emptyIcon}>📂</Text>
           <Text style={styles.emptyText}>No records found yet.</Text>
         </View>
-      ) : (
-        <FlatList
-          style={styles.listView}
-          data={transactions}
-          keyExtractor={(item) => item.id.toString()}
-          renderItem={renderItem}
-          contentContainerStyle={styles.listContent}
-          showsVerticalScrollIndicator={false}
-        />
-      )}
-
-      {/* Custom Bottom Navigation Bar */}
-      <View style={styles.bottomNav}>
-        <TouchableOpacity style={styles.navItem} onPress={() => navigation.navigate('Dashboard')}>
-          <Text style={styles.navIcon}>🏠</Text>
-          <Text style={styles.navLabel}>Home</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.navItem}>
-          <Text style={[styles.navIcon, styles.activeNavIcon]}>📜</Text>
-          <Text style={[styles.navLabel, styles.activeNavLabel]}>History</Text>
-        </TouchableOpacity>
-        
-        <View style={styles.fabContainer}>
-          <TouchableOpacity style={styles.fab} onPress={() => navigation.navigate('AddTransaction')}>
-            <Text style={styles.fabIcon}>+</Text>
-          </TouchableOpacity>
-        </View>
-
-        <TouchableOpacity style={styles.navItem} onPress={() => navigation.navigate('Reports')}>
-          <Text style={styles.navIcon}>📊</Text>
-          <Text style={styles.navLabel}>Reports</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.navItem} onPress={() => navigation.navigate('Profile')}>
-          <Text style={styles.navIcon}>👤</Text>
-          <Text style={styles.navLabel}>Profile</Text>
-        </TouchableOpacity>
-      </View>
-    </View>
+      }
+    />
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#F8F9FE' },
-  header: { padding: 25, paddingTop: 60, backgroundColor: '#F8F9FE' },
+  header: { paddingHorizontal: 25, paddingBottom: 10, backgroundColor: '#F8F9FE' },
   title: { fontSize: 28, fontWeight: 'bold', color: '#1E293B' },
   subtitle: { fontSize: 13, color: '#64748B', marginTop: 4, fontWeight: '500' },
-  listView: { flex: 1, ...Platform.select({ web: { overflowY: 'auto' } }) },
-  listContent: { padding: 20, paddingTop: 10, flexGrow: 1, paddingBottom: 120 },
+  listContent: { padding: 20, paddingTop: 10, paddingBottom: 120 },
   card: {
     backgroundColor: '#fff', borderRadius: 20, padding: 20, marginBottom: 16,
     elevation: 3, shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.05, shadowRadius: 8,

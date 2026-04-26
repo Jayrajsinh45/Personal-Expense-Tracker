@@ -19,6 +19,7 @@ export const CATEGORIES = [
   'Entertainment',
   'Health',
   'Investment',
+  'EMI',
   'Salary Credit',
   'Others'
 ];

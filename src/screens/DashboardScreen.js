@@ -1,21 +1,24 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, RefreshControl } from 'react-native';
+import { 
+  View, Text, StyleSheet, ScrollView, TouchableOpacity, 
+  RefreshControl, StatusBar, Platform, FlatList
+} from 'react-native';
 import { useIsFocused } from '@react-navigation/native';
-import { getFinancialSummary } from '../database/db';
+import { getFinancialSummary, getAllTransactions } from '../database/db';
+import { format } from 'date-fns';
 
 export default function DashboardScreen({ navigation }) {
   const [summary, setSummary] = useState({ Salary: 0, Expense: 0, Saving: 0, SIP: 0 });
+  const [transactions, setTransactions] = useState([]);
   const [refreshing, setRefreshing] = useState(false);
   const isFocused = useIsFocused();
 
   const loadData = () => {
-    const data = getFinancialSummary();
-    setSummary(data);
+    setSummary(getFinancialSummary());
+    setTransactions(getAllTransactions().slice(0, 5)); // Get recent 5
   };
 
-  useEffect(() => {
-    if (isFocused) loadData();
-  }, [isFocused]);
+  useEffect(() => { if (isFocused) loadData(); }, [isFocused]);
 
   const onRefresh = () => {
     setRefreshing(true);
@@ -25,110 +28,204 @@ export default function DashboardScreen({ navigation }) {
 
   const balance = summary.Salary - (summary.Expense + summary.Saving + summary.SIP);
 
-  const SummaryCard = ({ title, amount, color }) => (
-    <View style={[styles.card, { borderLeftColor: color, borderLeftWidth: 5 }]}>
-      <Text style={styles.cardTitle}>{title}</Text>
-      <Text style={[styles.cardAmount, { color }]}>₹{amount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</Text>
-    </View>
-  );
+  const getTypeColor = (type) => {
+    switch (type) {
+      case 'Salary': return '#10B981';
+      case 'Expense': return '#EF4444';
+      case 'Saving': return '#3B82F6';
+      case 'SIP': return '#8B5CF6';
+      default: return '#6B7280';
+    }
+  };
 
   return (
-    <ScrollView 
-      style={styles.container}
-      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
-    >
-      <View style={styles.header}>
-        <Text style={styles.balanceLabel}>Total Available Balance</Text>
-        <Text style={styles.balanceAmount}>₹{balance.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</Text>
+    <View style={styles.container}>
+      <StatusBar barStyle="dark-content" backgroundColor="#F8F9FE" />
+      
+      <ScrollView 
+        style={styles.scrollView}
+        contentContainerStyle={styles.scrollContent}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#4338CA" />}
+        showsVerticalScrollIndicator={false}
+      >
+        {/* Header matching Dribbble */}
+        <View style={styles.header}>
+          <View>
+            <Text style={styles.greeting}>Hi, Jayrajsinh 👋</Text>
+            <Text style={styles.subGreeting}>Welcome back to your wallet</Text>
+          </View>
+          <TouchableOpacity style={styles.bellBtn}>
+            <Text style={{ fontSize: 20 }}>🔔</Text>
+          </TouchableOpacity>
+        </View>
+
+        {/* This Month Spend */}
+        <View style={styles.spendSection}>
+          <Text style={styles.spendLabel}>This Month Spend</Text>
+          <Text style={styles.spendAmount}>₹{summary.Expense.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</Text>
+        </View>
+
+        {/* Wallet Card */}
+        <View style={styles.walletCard}>
+          <View style={styles.walletLeft}>
+            <View style={styles.walletIconBox}>
+              <Text style={{ fontSize: 22 }}>💳</Text>
+            </View>
+            <View>
+              <Text style={styles.walletName}>Total Balance</Text>
+              <Text style={styles.walletAccount}>Available Funds</Text>
+            </View>
+          </View>
+          <Text style={styles.walletBalance}>₹{balance.toLocaleString('en-IN')}</Text>
+        </View>
+
+        {/* Quick Summary Grid */}
+        <View style={styles.grid}>
+          {[
+            { title: 'Income', amount: summary.Salary, icon: '⬇️', color: '#10B981', bg: '#D1FAE5' },
+            { title: 'Investment', amount: summary.SIP, icon: '↗️', color: '#8B5CF6', bg: '#EDE9FE' },
+          ].map((item, idx) => (
+            <View key={idx} style={styles.miniCard}>
+              <View style={[styles.miniIconBox, { backgroundColor: item.bg }]}>
+                <Text style={{ fontSize: 14 }}>{item.icon}</Text>
+              </View>
+              <View>
+                <Text style={styles.miniLabel}>{item.title}</Text>
+                <Text style={[styles.miniAmount, { color: item.color }]}>₹{item.amount.toLocaleString()}</Text>
+              </View>
+            </View>
+          ))}
+        </View>
+
+        {/* Recent Transactions */}
+        <View style={styles.recentHeader}>
+          <Text style={styles.sectionTitle}>Recent Transactions</Text>
+          <TouchableOpacity onPress={() => navigation.navigate('History')}>
+            <Text style={styles.seeAll}>See All</Text>
+          </TouchableOpacity>
+        </View>
+
+        {transactions.length === 0 ? (
+          <View style={styles.empty}>
+            <Text style={styles.emptyText}>No recent transactions.</Text>
+          </View>
+        ) : (
+          transactions.map((item) => (
+            <View key={item.id} style={styles.txRow}>
+              <View style={[styles.txIconBox, { backgroundColor: getTypeColor(item.type) + '15' }]}>
+                <Text style={{ fontSize: 18 }}>{item.type === 'Salary' ? '💰' : item.type === 'Expense' ? '🍔' : '🏦'}</Text>
+              </View>
+              <View style={styles.txMid}>
+                <Text style={styles.txCategory}>{item.category}</Text>
+                <Text style={styles.txDate}>{format(new Date(item.date), 'dd MMM, hh:mm a')}</Text>
+              </View>
+              <Text style={[styles.txAmount, { color: getTypeColor(item.type) }]}>
+                {item.type === 'Expense' ? '-' : '+'}₹{item.amount.toLocaleString()}
+              </Text>
+            </View>
+          ))
+        )}
+        <View style={{ height: 120 }} />
+      </ScrollView>
+
+      {/* Custom Bottom Navigation Bar */}
+      <View style={styles.bottomNav}>
+        <TouchableOpacity style={styles.navItem}>
+          <Text style={[styles.navIcon, styles.activeNavIcon]}>🏠</Text>
+          <Text style={[styles.navLabel, styles.activeNavLabel]}>Home</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.navItem} onPress={() => navigation.navigate('History')}>
+          <Text style={styles.navIcon}>📜</Text>
+          <Text style={styles.navLabel}>History</Text>
+        </TouchableOpacity>
+        
+        <View style={styles.fabContainer}>
+          <TouchableOpacity style={styles.fab} onPress={() => navigation.navigate('AddTransaction')}>
+            <Text style={styles.fabIcon}>+</Text>
+          </TouchableOpacity>
+        </View>
+
+        <TouchableOpacity style={styles.navItem} onPress={() => navigation.navigate('Reports')}>
+          <Text style={styles.navIcon}>📊</Text>
+          <Text style={styles.navLabel}>Reports</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.navItem} onPress={() => navigation.navigate('Profile')}>
+          <Text style={styles.navIcon}>👤</Text>
+          <Text style={styles.navLabel}>Profile</Text>
+        </TouchableOpacity>
       </View>
-
-      <View style={styles.grid}>
-        <SummaryCard title="Total Salary" amount={summary.Salary} color="#10B981" />
-        <SummaryCard title="Total Expenses" amount={summary.Expense} color="#EF4444" />
-        <SummaryCard title="Total Savings" amount={summary.Saving} color="#3B82F6" />
-        <SummaryCard title="Total SIPs" amount={summary.SIP} color="#8B5CF6" />
-      </View>
-
-      <View style={styles.actions}>
-        <TouchableOpacity 
-          style={styles.actionButton} 
-          onPress={() => navigation.navigate('AddTransaction')}
-        >
-          <Text style={styles.actionButtonText}>Add New Record</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity 
-          style={[styles.actionButton, styles.outlineButton]} 
-          onPress={() => navigation.navigate('History')}
-        >
-          <Text style={[styles.actionButtonText, styles.outlineButtonText]}>View History</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity 
-          style={[styles.actionButton, styles.reportButton]} 
-          onPress={() => navigation.navigate('Reports')}
-        >
-          <Text style={styles.actionButtonText}>View Reports</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity 
-          style={[styles.actionButton, styles.logoutButton]} 
-          onPress={async () => {
-            const AsyncStorage = require('@react-native-async-storage/async-storage').default;
-            await AsyncStorage.removeItem('isLoggedIn');
-            navigation.replace('Login');
-          }}
-        >
-          <Text style={styles.actionButtonText}>Logout</Text>
-        </TouchableOpacity>
-      </View>
-    </ScrollView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#F3F4F6' },
-  header: {
-    backgroundColor: '#4F46E5',
-    padding: 30,
-    borderBottomLeftRadius: 30,
-    borderBottomRightRadius: 30,
-    alignItems: 'center',
-    marginBottom: 20,
+  container: { flex: 1, backgroundColor: '#F8F9FE' }, // Light lavender background
+  scrollView: { flex: 1, ...Platform.select({ web: { overflowY: 'auto' } }) },
+  scrollContent: { paddingHorizontal: 20, paddingTop: 60, flexGrow: 1 },
+  
+  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 30 },
+  greeting: { fontSize: 20, fontWeight: 'bold', color: '#1E293B' },
+  subGreeting: { fontSize: 13, color: '#64748B', marginTop: 4 },
+  bellBtn: { width: 45, height: 45, borderRadius: 22.5, backgroundColor: '#fff', alignItems: 'center', justifyContent: 'center', elevation: 2, shadowColor: '#000', shadowOffset: {width:0,height:2}, shadowOpacity: 0.05 },
+
+  spendSection: { alignItems: 'center', marginBottom: 30 },
+  spendLabel: { fontSize: 14, color: '#64748B', fontWeight: '600', textTransform: 'uppercase', letterSpacing: 1 },
+  spendAmount: { fontSize: 42, fontWeight: '900', color: '#1E293B', marginTop: 8 },
+
+  walletCard: {
+    backgroundColor: '#fff', borderRadius: 24, padding: 20, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+    elevation: 8, shadowColor: '#4338CA', shadowOffset: { width: 0, height: 10 }, shadowOpacity: 0.1, shadowRadius: 20, marginBottom: 20,
+    borderWidth: 1, borderColor: '#F1F5F9'
   },
-  balanceLabel: { color: '#E0E7FF', fontSize: 16 },
-  balanceAmount: { color: '#fff', fontSize: 36, fontWeight: 'bold', marginTop: 5 },
-  grid: {
-    paddingHorizontal: 20,
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'space-between',
+  walletLeft: { flexDirection: 'row', alignItems: 'center' },
+  walletIconBox: { width: 50, height: 50, borderRadius: 16, backgroundColor: '#EEF2FF', alignItems: 'center', justifyContent: 'center', marginRight: 15 },
+  walletName: { fontSize: 16, fontWeight: 'bold', color: '#1E293B' },
+  walletAccount: { fontSize: 12, color: '#94A3B8', marginTop: 2 },
+  walletBalance: { fontSize: 18, fontWeight: '800', color: '#4338CA' },
+
+  grid: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 30 },
+  miniCard: {
+    backgroundColor: '#fff', width: '48%', borderRadius: 20, padding: 15, flexDirection: 'row', alignItems: 'center',
+    elevation: 3, shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.03, shadowRadius: 10,
   },
-  card: {
-    backgroundColor: '#fff',
-    width: '48%',
-    padding: 20,
-    borderRadius: 15,
-    marginBottom: 15,
-    elevation: 3,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
+  miniIconBox: { width: 36, height: 36, borderRadius: 12, alignItems: 'center', justifyContent: 'center', marginRight: 10 },
+  miniLabel: { fontSize: 11, color: '#64748B', fontWeight: '600' },
+  miniAmount: { fontSize: 14, fontWeight: 'bold', marginTop: 2 },
+
+  recentHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 15 },
+  sectionTitle: { fontSize: 18, fontWeight: 'bold', color: '#1E293B' },
+  seeAll: { fontSize: 13, color: '#4338CA', fontWeight: 'bold' },
+
+  txRow: {
+    backgroundColor: '#fff', borderRadius: 20, padding: 15, flexDirection: 'row', alignItems: 'center', marginBottom: 12,
+    elevation: 2, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.02, shadowRadius: 5,
   },
-  cardTitle: { fontSize: 14, color: '#6B7280', marginBottom: 5 },
-  cardAmount: { fontSize: 18, fontWeight: 'bold' },
-  actions: { padding: 20 },
-  actionButton: {
-    backgroundColor: '#4F46E5',
-    padding: 18,
-    borderRadius: 12,
-    alignItems: 'center',
-    marginBottom: 15,
+  txIconBox: { width: 46, height: 46, borderRadius: 14, alignItems: 'center', justifyContent: 'center', marginRight: 15 },
+  txMid: { flex: 1 },
+  txCategory: { fontSize: 15, fontWeight: 'bold', color: '#1E293B' },
+  txDate: { fontSize: 12, color: '#94A3B8', marginTop: 4 },
+  txAmount: { fontSize: 16, fontWeight: 'bold' },
+
+  empty: { alignItems: 'center', padding: 20 },
+  emptyText: { color: '#94A3B8' },
+
+  bottomNav: {
+    position: 'absolute', bottom: 0, left: 0, right: 0,
+    backgroundColor: '#fff', flexDirection: 'row', justifyContent: 'space-around', alignItems: 'center',
+    height: 80, paddingBottom: Platform.OS === 'ios' ? 20 : 0,
+    borderTopLeftRadius: 30, borderTopRightRadius: 30,
+    elevation: 20, shadowColor: '#000', shadowOffset: { width: 0, height: -10 }, shadowOpacity: 0.05, shadowRadius: 20,
   },
-  actionButtonText: { color: '#fff', fontSize: 16, fontWeight: 'bold' },
-  outlineButton: { backgroundColor: 'transparent', borderWidth: 2, borderColor: '#4F46E5' },
-  outlineButtonText: { color: '#4F46E5' },
-  reportButton: { backgroundColor: '#111827' },
-  logoutButton: { backgroundColor: '#EF4444' }
+  navItem: { alignItems: 'center', justifyContent: 'center', width: 60 },
+  navIcon: { fontSize: 22, color: '#94A3B8', marginBottom: 4 },
+  navLabel: { fontSize: 10, color: '#94A3B8', fontWeight: '600' },
+  activeNavIcon: { color: '#4338CA' },
+  activeNavLabel: { color: '#4338CA', fontWeight: 'bold' },
+  fabContainer: { position: 'relative', top: -25, alignItems: 'center', justifyContent: 'center' },
+  fab: {
+    width: 60, height: 60, borderRadius: 30, backgroundColor: '#4338CA',
+    alignItems: 'center', justifyContent: 'center',
+    elevation: 10, shadowColor: '#4338CA', shadowOffset: { width: 0, height: 10 }, shadowOpacity: 0.4, shadowRadius: 15,
+  },
+  fabIcon: { fontSize: 32, color: '#fff', fontWeight: '300', marginTop: -2 },
 });
